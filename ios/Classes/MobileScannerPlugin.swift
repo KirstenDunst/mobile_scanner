@@ -59,6 +59,8 @@ public class MobileScannerPlugin: NSObject, FlutterPlugin {
             barcodeHandler.publishEvent(["name": "torchState", "data": torchState])
         }, zoomScaleChangeCallback: { zoomScale in
             barcodeHandler.publishEvent(["name": "zoomScaleState", "data": zoomScale])
+        }, brightnessChangeCallback:  { brightness in
+            barcodeHandler.publishEvent(["name": "brightnessValue", "data": brightness])
         })
         self.barcodeHandler = barcodeHandler
         super.init()

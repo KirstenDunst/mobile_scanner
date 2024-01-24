@@ -78,11 +78,15 @@ class MobileScannerHandler(
         barcodeHandler.publishEvent(mapOf("name" to "zoomScaleState", "data" to zoomScale))
     }
 
+    private val brightnessChangeCallback: BrightnessValueCallback = {brightness: Double ->
+        barcodeHandler.publishEvent(mapOf("name" to "brightnessValue", "data" to brightness))
+    }
+
     init {
         methodChannel = MethodChannel(binaryMessenger,
             "dev.steenbakker.mobile_scanner/scanner/method")
         methodChannel!!.setMethodCallHandler(this)
-        mobileScanner = MobileScanner(activity, textureRegistry, callback, errorCallback)
+        mobileScanner = MobileScanner(activity, textureRegistry, callback, brightnessChangeCallback, errorCallback)
     }
 
     fun dispose(activityPluginBinding: ActivityPluginBinding) {

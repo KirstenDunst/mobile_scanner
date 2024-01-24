@@ -114,6 +114,9 @@ class MobileScannerController {
   /// A notifier that provides zoomScale.
   final ValueNotifier<double> zoomScaleState = ValueNotifier(0.0);
 
+  //缓冲区图片帧亮度
+  final ValueNotifier<double?> brightnessNotifier = ValueNotifier(null);
+
   bool isStarting = false;
 
   /// A notifier that provides availability of the Torch (Flash)
@@ -422,6 +425,9 @@ class MobileScannerController {
         break;
       case 'zoomScaleState':
         zoomScaleState.value = data as double? ?? 0.0;
+        break;
+      case 'brightnessValue':
+        brightnessNotifier.value = data as double?;
         break;
       case 'barcode':
         if (data == null) return;

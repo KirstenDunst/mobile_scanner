@@ -41,6 +41,7 @@ class MobileScanner(
     private val activity: Activity,
     private val textureRegistry: TextureRegistry,
     private val mobileScannerCallback: MobileScannerCallback,
+    private val brightnessValueCallback: BrightnessValueCallback,
     private val mobileScannerErrorCallback: MobileScannerErrorCallback
 ) {
 
@@ -67,6 +68,21 @@ class MobileScanner(
     val captureOutput = ImageAnalysis.Analyzer { imageProxy -> // YUV_420_888 format
         val mediaImage = imageProxy.image ?: return@Analyzer
         val inputImage = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
+
+        //亮度获取(实时获取到的亮度数值)
+        val buffer = imageProxy.planes[0].buffer
+        val pixelArray = ByteArray(buffer.remaining())
+        buffer.get(pixelArray)
+        var sum = 0.0
+        for (i in pixelArray.indices step 4) {
+            val pixel = (pixelArray[i].toInt() and 0xFF)  // 取红色分量
+            sum += pixel.toDouble()
+        }
+        // 计算平均亮度
+        val totalPixels = pixelArray.size / 4  // 每个像素由四个分量组成（ARGB）
+        val luminance = sum / totalPixels
+//        println("Current Luminance: $luminance")
+        brightnessValueCallback(luminance)
 
         if (detectionSpeed == DetectionSpeed.NORMAL && scannerTimeout) {
             imageProxy.close()

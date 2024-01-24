@@ -14,6 +14,7 @@ import MLKitBarcodeScanning
 typealias MobileScannerCallback = ((Array<Barcode>?, Error?, UIImage) -> ())
 typealias TorchModeChangeCallback = ((Int?) -> ())
 typealias ZoomScaleChangeCallback = ((Double?) -> ())
+typealias BrightnessChangeCallback = ((Double?) -> ())
 
 public class MobileScanner: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, FlutterTexture {
     /// Capture session of the camera
@@ -40,6 +41,9 @@ public class MobileScanner: NSObject, AVCaptureVideoDataOutputSampleBufferDelega
     /// When zoom scale is changes, this callback will be called
     let zoomScaleChangeCallback: ZoomScaleChangeCallback
 
+    /// 亮度变化
+    let brightnessChangeCallback: BrightnessChangeCallback
+
     /// If provided, the Flutter registry will be used to send the output of the CaptureOutput to a Flutter texture.
     private let registry: FlutterTextureRegistry?
 
@@ -61,11 +65,12 @@ public class MobileScanner: NSObject, AVCaptureVideoDataOutputSampleBufferDelega
     
     public var timeoutSeconds: Double = 0
 
-    init(registry: FlutterTextureRegistry?, mobileScannerCallback: @escaping MobileScannerCallback, torchModeChangeCallback: @escaping TorchModeChangeCallback, zoomScaleChangeCallback: @escaping ZoomScaleChangeCallback) {
+    init(registry: FlutterTextureRegistry?, mobileScannerCallback: @escaping MobileScannerCallback, torchModeChangeCallback: @escaping TorchModeChangeCallback, zoomScaleChangeCallback: @escaping ZoomScaleChangeCallback, brightnessChangeCallback: @escaping BrightnessChangeCallback) {
         self.registry = registry
         self.mobileScannerCallback = mobileScannerCallback
         self.torchModeChangeCallback = torchModeChangeCallback
         self.zoomScaleChangeCallback = zoomScaleChangeCallback
+        self.brightnessChangeCallback = brightnessChangeCallback
         super.init()
     }
 
@@ -132,6 +137,19 @@ public class MobileScanner: NSObject, AVCaptureVideoDataOutputSampleBufferDelega
         }
         latestBuffer = imageBuffer
         registry?.textureFrameAvailable(textureId)
+
+        // 图像帧的亮度参数获取
+        // 获取 metadata 字典
+        if let metadataDict = CMCopyDictionaryOfAttachments(allocator: nil, target: sampleBuffer, attachmentMode: kCMAttachmentMode_ShouldPropagate) {
+            let metadata = NSMutableDictionary(dictionary: metadataDict)
+//            metadataDict.release()
+            // 获取 Exif metadata 字典
+            if let exifMetadata = metadata[kCGImagePropertyExifDictionary] as? NSDictionary{
+                // 获取亮度值
+            let brightnessValue = exifMetadata[kCGImagePropertyExifBrightnessValue]
+                brightnessChangeCallback(brightnessValue as? Double)
+            }
+        }
         
         let currentTime = Date().timeIntervalSince1970
         let eligibleForScan = currentTime > nextScanTime && !imagesCurrentlyBeingProcessed
